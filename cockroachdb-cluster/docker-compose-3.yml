@@ -1,0 +1,49 @@
+version: "3.1"
+
+services:
+
+  cockroachdb-02:
+    hostname: cockroachdb-02
+    image: cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2}
+    command: |-
+      start
+      --join=cockroachdb-01:26257,cockroachdb-02:26257,cockroachdb-03:26257
+      --cache=25%
+      --max-sql-memory=25%
+      --logtostderr
+      --insecure
+    volumes:
+      - cockroachdb-02:/cockroach/cockroach-data
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-02
+
+  cockroachdb-03:
+    hostname: cockroachdb-03
+    image: cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2}
+    command: |-
+      start
+      --join=cockroachdb-01:26257,cockroachdb-02:26257,cockroachdb-03:26257
+      --cache=25%
+      --max-sql-memory=25%
+      --logtostderr
+      --insecure
+    volumes:
+      - cockroachdb-03:/cockroach/cockroach-data
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-03
+
+volumes:
+  cockroachdb-02:
+  cockroachdb-03:
+
+networks:
+  mynet:
+    external: true

@@ -1,0 +1,77 @@
+version: "3.1"
+
+services:
+
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_VERSION:-v2.0.0}
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-config:/etc/prometheus
+      - prometheus:/prometheus
+    networks:
+      - mynet
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION:-4.6.2}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana:/var/lib/grafana
+    networks:
+      - mynet
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_PASSWORD:-admin}
+      PROMETHEUS_ENDPOINT: http://prometheus:9090
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  node-exporter:
+    hostname: "{{.Node.ID}}"
+    image: prom/node-exporter:${NODE_EXPORTER_VERSION:-v0.15.1}
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc
+      - /sys:/host/sys
+      - /:/rootfs
+      - /etc/hostname:/etc/host_hostname
+    environment:
+      HOST_HOSTNAME: /etc/host_hostname
+    networks:
+      - mynet
+    deploy:
+      mode: global
+
+  cadvisor:
+    hostname: "{{.Node.ID}}"
+    image: google/cadvisor:${CADVISOR_VERSION:-v0.28.2}
+    ports:
+      - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock,readonly
+      - /:/rootfs
+      - /var/run:/var/run
+      - /sys:/sys
+      - /var/lib/docker/:/var/lib/docker
+    networks:
+      - mynet
+    deploy:
+      mode: global
+
+volumes:
+  prometheus-config:
+  prometheus:
+  grafana:
+
+networks:
+  mynet:
+    external: true

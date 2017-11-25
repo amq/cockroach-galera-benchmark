@@ -1,0 +1,32 @@
+version: "3.1"
+
+services:
+
+  cockroachdb-01:
+    hostname: cockroachdb-01
+    image: cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2}
+    command: |-
+      start
+      --join=cockroachdb-01:26257
+      --cache=25%
+      --max-sql-memory=25%
+      --logtostderr
+      --insecure
+    ports:
+      - "8080:8080"
+      - "26257:26257"
+    volumes:
+      - cockroachdb-01:/cockroach/cockroach-data
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-01
+
+volumes:
+  cockroachdb-01:
+
+networks:
+  mynet:
+    external: true
