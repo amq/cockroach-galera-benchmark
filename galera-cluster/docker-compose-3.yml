@@ -10,15 +10,17 @@ services:
       - MYSQL_INITDB_SKIP_TZINFO=1
     command: |-
       --max-connections=2000
-      --query-cache-type=1
-      --query-cache-size=128M
+      --query-cache-type=0
+      --query-cache-size=0
       --performance-schema=0
       --log-bin=1
       --log-slave-updates=1
       --binlog-format=ROW
+      --binlog-cache-size=16M
       --innodb-flush-method=O_DIRECT
-      --innodb-buffer-pool-size=4000M
+      --innodb-buffer-pool-size=4096M
       --innodb-buffer-pool-instances=4
+      --innodb-log-file-size=512M
       --innodb-log-buffer-size=64M
       --sync-binlog=0
       --innodb-flush-log-at-trx-commit=2
@@ -57,15 +59,17 @@ services:
       - MYSQL_INITDB_SKIP_TZINFO=1
     command: |-
       --max-connections=2000
-      --query-cache-type=1
-      --query-cache-size=128M
+      --query-cache-type=0
+      --query-cache-size=0
       --performance-schema=0
       --log-bin=1
       --log-slave-updates=1
       --binlog-format=ROW
+      --binlog-cache-size=16M
       --innodb-flush-method=O_DIRECT
-      --innodb-buffer-pool-size=4000M
+      --innodb-buffer-pool-size=4096M
       --innodb-buffer-pool-instances=4
+      --innodb-log-file-size=512M
       --innodb-log-buffer-size=64M
       --sync-binlog=0
       --innodb-flush-log-at-trx-commit=2
