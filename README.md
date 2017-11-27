@@ -26,11 +26,21 @@
 
 ### 1. Launch instances
 
+Choose the base hostname
+```
+export BASE_HOSTNAME=node
+```
+
+Make sure `docker-machine` version is `>= 0.13.0`
+```
+docker-machine -v
+```
+
 **Locally**
 
 ```
 for i in {1..3}; do
-    docker-machine create node-0$i
+    docker-machine create ${BASE_HOSTNAME:-node}-0$i
 done
 ```
 
@@ -39,6 +49,7 @@ done
 ```
 for i in {1..3}; do
     docker-machine create \
+    --engine-storage-driver overlay2 \
     --driver amazonec2 \
     --amazonec2-region eu-central-1 \
     --amazonec2-zone a \
@@ -46,24 +57,48 @@ for i in {1..3}; do
     --amazonec2-volume-type gp2 \
     --amazonec2-root-size 500 \
     --amazonec2-ami ami-3d2bab52 \
-    node-0$i
+    ${BASE_HOSTNAME:-node}-0$i
 done
 ```
 
-### 2. Initialize Swarm on first node
+Refer to [https://docs.docker.com/machine/drivers/aws/](docs) on how to set up the credentials
+
+### 2. Verify that system settings are above recommended
+
+```
+docker-machine ssh ${BASE_HOSTNAME:-node}-01
+sudo su
+```
+
+Per-process file limit must be `>= 15000`
+```
+cat /proc/$(pidof dockerd)/limits | grep "Max open files"
+```
+
+Global open file limit mush be above `15000 * 10`
+```
+cat /proc/sys/fs/file-max
+```
+
+Storage driver must be `overlay2`
+```
+docker info | grep "Storage Driver"
+```
+
+### 3. Initialize Swarm on first node
 
 **Locally**
 
 ```
-eval "$(docker-machine env node-01)"
+eval "$(docker-machine env ${BASE_HOSTNAME:-node}-01)"
 docker swarm init --advertise-addr=eth1
 ```
 
 **AWS**
 
 ```
-eval "$(docker-machine env node-01)"
-docker swarm init --advertise-addr=eth0
+eval "$(docker-machine env ${BASE_HOSTNAME:-node}-01)"
+docker swarm init --advertise-addr=ens3
 ```
 
 Get the join command:
@@ -71,44 +106,18 @@ Get the join command:
 docker swarm join-token worker | grep docker | xargs
 ```
 
-### 3. Join Swarm on other nodes
+### 4. Join Swarm on other nodes
 
 ```
-eval "$(docker-machine env node-02)"
+eval "$(docker-machine env ${BASE_HOSTNAME:-node}-02)"
 ```
 
 *Run the join command from last step and repeat for node-03*
 
-### 4. Create attachable network
+### 5. Create attachable network
 
 ```
 docker network create --driver overlay --attachable mynet
-```
-
-### 5. Verify that vital system settings are above recommended
-
-```
-docker-machine ssh node-01
-```
-
-File descriptors must be >= 15000
-```
-sudo ulimit -a
-```
-
-Global open file limit mush be above 15000 * 10
-```
-sudo cat /proc/sys/fs/file-max
-```
-
-Scheduler must be `noop` or `deadline`
-```
-sudo cat /sys/block/sda/queue/scheduler
-```
-
-Storage driver must be `overlay2`
-```
-docker info | grep "Storage Driver"
 ```
 
 ### 6. Launch monitoring services
@@ -120,6 +129,12 @@ docker stack deploy --compose-file=docker-compose.yml monitoring
 
 ### 7. Load prometheus configuration
 
+```
+docker cp monitoring/prometheus.yml monitoring_prometheus.1.$(docker service ps --no-trunc -f 'desired-state=running' -f 'name=monitoring_prometheus.1' monitoring_prometheus -q):/etc/prometheus/prometheus.yml
+docker service scale monitoring_prometheus=0
+docker service scale monitoring_prometheus=1
+```
+
 ### 8. Verify that monitoring works
 
 Prometheus  
@@ -128,7 +143,7 @@ http://ip-of-node-01:9090/
 Grafana  
 http://ip-of-node-01:3000/
 
-### 9. Import Grafana dashboards
+### 9. Import grafana dashboards
 
 [CockroachDB](https://github.com/cockroachdb/cockroach/tree/master/monitoring/grafana-dashboards)
 
