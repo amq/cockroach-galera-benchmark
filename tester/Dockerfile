@@ -37,11 +37,11 @@ RUN cd /tmp && git clone https://github.com/akopytov/sysbench.git && \
     make install
 
 RUN cd /tmp && wget https://github.com/brianfrankcooper/YCSB/releases/download/${YCSB_VERSION}/ycsb-${YCSB_VERSION}.tar.gz && \
-    tar -zxvf ycsb-${YCSB_VERSION}.tar.gz && \
+    tar -zxvf ycsb-${YCSB_VERSION}.tar.gz && rm ycsb-${YCSB_VERSION}.tar.gz && \
     mv ycsb-${YCSB_VERSION} /scripts/ycsb && \
     cd /scripts/ycsb && \
     wget https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-${MYSQL_DRIVER_VERSION}.tar.gz && \
-    tar -zxvf mysql-connector-java-${MYSQL_DRIVER_VERSION}.tar.gz && \
+    tar -zxvf mysql-connector-java-${MYSQL_DRIVER_VERSION}.tar.gz && rm mysql-connector-java-${MYSQL_DRIVER_VERSION}.tar.gz && \
     mv mysql-connector-java-${MYSQL_DRIVER_VERSION}/mysql-connector-java-${MYSQL_DRIVER_VERSION}-bin.jar lib && \
     wget https://jdbc.postgresql.org/download/postgresql-${POSTGRESQL_DRIVER_VERSION}.jar && \
     mv postgresql-${POSTGRESQL_DRIVER_VERSION}.jar lib
