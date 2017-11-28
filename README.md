@@ -1,18 +1,6 @@
 ## Status
 
-- did a *preliminary* single-node local testing which shows that:
-    - CockroachDB with 1 concurrent client has
-        - 0.35 of read throughput (more is better, Galera = 1.0)
-        - 0.05 of write
-        - 0.1 of mixed (70% read, 30% write)
-        - 0.08 of update
-        - 10 times higher 95th percentile latency in average than Galera (lower is better)
-    - CockroachDB with 4 concurrent clients has
-        - 0.3 of read throughput (more is better, Galera = 1.0)
-        - 0.04 of write
-        - 0.04 of mixed (70% read, 30% write)
-        - 0.08 of update
-        - 13 times higher 95th percentile latency in average than Galera (lower is better)
+- did a *preliminary* single-node testing, see [cockroachdb/cockroach#17777](https://github.com/cockroachdb/cockroach/issues/17777#issuecomment-347243141)
 
 ## Roadmap
 
@@ -84,6 +72,8 @@ Storage driver must be `overlay2`
 ```
 docker info | grep "Storage Driver"
 ```
+
+When done, exit from ssh.
 
 ### 3. Initialize Swarm on first node
 
@@ -245,6 +235,7 @@ docker stack deploy --compose-file=docker-compose-3.yml galera
 
 ```
 docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2} mysql -h galera-01
+
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
 
@@ -288,6 +279,7 @@ With YCSB we will have an additional arragement:
 ### Room for improvement
 
 - simplify galera initialization
+- merge galera and cockroachdb tests to avoid duplication
 - a one-stop script which does all of the above
 - parse results into json or csv
 - global mysql_exporter instead of manual per-node
