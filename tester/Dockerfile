@@ -1,7 +1,8 @@
 FROM ubuntu:xenial
 
-ENV SYSBENCH_VERSION=master
+ENV SYSBENCH_VERSION=dcf0275384f573cff2f027c5e6a4fe4b522ecf30
 ENV YCSB_VERSION=0.12.0
+ENV OLTPBENCH_VERSION=51f9aa011defb33cfe4c8ebd902c495830c2824f
 ENV MYSQL_DRIVER_VERSION=5.1.44
 ENV POSTGRESQL_DRIVER_VERSION=42.1.4
 
@@ -48,6 +49,7 @@ RUN cd /tmp && wget https://github.com/brianfrankcooper/YCSB/releases/download/$
 RUN cd /tmp && git clone https://github.com/oltpbenchmark/oltpbench.git && \
     mv oltpbench /scripts/oltpbench && \
     cd /scripts/oltpbench && \
+    git checkout ${OLTPBENCH_VERSION} && \
     ant
 
 COPY . /scripts
