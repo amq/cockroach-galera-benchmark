@@ -153,7 +153,7 @@ docker stack deploy --compose-file=docker-compose-1.yml cockroachdb
 ### 11. Initialize cockroachdb cluster
 
 ```
-docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2} init --host=cockroachdb-01 --insecure
+docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} init --host=cockroachdb-01 --insecure
 ```
 
 ### 12. Verify that cockroachdb works
@@ -162,9 +162,9 @@ Web console
 http://ip-of-node-01:8080/
 
 ```
-docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2} node status --host=cockroachdb-01 --insecure
+docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} node status --host=cockroachdb-01 --insecure
 
-docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2} sql --host=cockroachdb-01 --insecure
+docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} sql --host=cockroachdb-01 --insecure
 ```
 
 ### 13. Launch galera-01
@@ -221,7 +221,7 @@ docker stack deploy --compose-file=docker-compose-3.yml cockroachdb
 ### 18. Verify that cockroachdb cluster has 3 members
 
 ```
-docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2} node status --host=cockroachdb-01 --insecure
+docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} node status --host=cockroachdb-01 --insecure
 ```
 
 ### 19. Launch galera-02 and 03

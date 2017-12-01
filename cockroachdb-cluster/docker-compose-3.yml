@@ -4,7 +4,7 @@ services:
 
   cockroachdb-02:
     hostname: cockroachdb-02
-    image: cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2}
+    image: cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3}
     command: |-
       start
       --join=cockroachdb-01:26257,cockroachdb-02:26257,cockroachdb-03:26257
@@ -23,7 +23,7 @@ services:
 
   cockroachdb-03:
     hostname: cockroachdb-03
-    image: cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.2}
+    image: cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3}
     command: |-
       start
       --join=cockroachdb-01:26257,cockroachdb-02:26257,cockroachdb-03:26257
