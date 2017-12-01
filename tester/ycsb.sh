@@ -52,7 +52,7 @@ for test in a b d; do
         echo "cockroachdb: finished ycsb $test ($threads tps) at $(date +'%H:%m')"
     done
 
-    PGPASSWORD=$COCKROACHDB_PASS psql -h $COCKROACHDB_HOST -p $COCKROACHDB_PORT -U $COCKROACHDB_USER -c "TRUNCATE TABLE ycsb"
+    PGPASSWORD=$COCKROACHDB_PASS psql -h $COCKROACHDB_HOST -p $COCKROACHDB_PORT -U $COCKROACHDB_USER -c "TRUNCATE TABLE ycsb.usertable"
 done
 
 #####
@@ -77,5 +77,5 @@ for test in a b d; do
         echo "galera: finished ycsb $test ($threads tps) at $(date +'%H:%m')"
     done
 
-    mysql -h $GALERA_HOST -P $GALERA_PORT -u $GALERA_USER --password=$GALERA_PASS -e "TRUNCATE TABLE ycsb"
+    mysql -h $GALERA_HOST -P $GALERA_PORT -u $GALERA_USER --password=$GALERA_PASS -e "TRUNCATE TABLE ycsb.usertable"
 done
