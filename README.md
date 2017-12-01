@@ -5,7 +5,7 @@
 ## Roadmap
 
 - the performance of CockroachDB seems to be too low, make sure I didn't miss something obvious
-- investigate oltpbench compatibility issues
+- investigate oltpbench compatibility issues, possibly add a dialect file
 - evaluate special / pareto / zipfian distribution usage for sysbench
 - try MaxScale load balancer to balance reads while sending writes to a single node
 - launch the final testing, I expect it to last for a few days without pauses
@@ -247,6 +247,13 @@ docker run -i --rm tester /scripts/ycsb.sh > ycsb-3.log
 docker run -i --rm tester /scripts/oltpbench.sh > oltpbench-3.log
 ```
 
+### Parsing
+
+Sysbench
+```
+cat sysbench-1.log | egrep "threads:|transactions:|queries:|min:|avg:|max:|percentile:" | tr -d "\n" | sed 's/Number of threads: /\n/g' | sed 's/[A-Za-z\/]\{1,\}://g' | sed -e 's/95th//g' -e 's/per sec.)//g' -e 's/ms//g' -e 's/(//g' | sed 's/ \{1,\}/,/g'
+```
+
 ### Tests
 
 - Sysbench OLTP Read-Write
@@ -256,8 +263,8 @@ docker run -i --rm tester /scripts/oltpbench.sh > oltpbench-3.log
 - YCSB Workload A Update-Heavy (50/50)
 - YCSB Workload B Mostly-Reads (95/5)
 - YCSB Workload D Read-Latest (95/5)
-- OLTPBench Wikipedia
-- OLTPBench Linkbench (Facebook)
+- OLTP-Bench Linkbench (Facebook)
+- OLTP-Bench Twitter
 
 Each test will have following arrangements:
 - Single node, 3-node cluster
@@ -272,7 +279,7 @@ With YCSB we will have an additional arragement:
 - throughput (transactions per second)
 - latency (average and 95%) with a varying number of clients
 - latency (average and 95%) with a varying number of transactions per second
-- iostats
+- iostat
 - CPU usage
 - database size
 
