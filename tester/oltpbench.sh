@@ -13,26 +13,27 @@ export GALERA_PASS=""
 export WARMUP_TIME=10
 
 export PREPARATION_QUERY="
-    DROP DATABASE IF EXISTS wikipedia;
     DROP DATABASE IF EXISTS linkbench;
-    CREATE DATABASE wikipedia;
-    CREATE DATABASE linkbench;"
+    DROP DATABASE IF EXISTS twitter;
+    CREATE DATABASE linkbench;
+    CREATE DATABASE twitter;"
 
 cd oltpbench
 
 PGPASSWORD=$COCKROACHDB_PASS psql -h $COCKROACHDB_HOST -p $COCKROACHDB_PORT -U $COCKROACHDB_USER -c "$PREPARATION_QUERY"
 
-for test in wikipedia linkbench; do
-    options=""
-    if [ $test = "linkbench" ]; then
-        options="elideSetAutoCommits=true&amp;useLocalTransactionState=true&amp;allowMultiQueries=true&amp;useLocalSessionState=true&amp;useAffectedRows=true"
-    fi
+for test in linkbench twitter; do
     sed -i \
         -e "/<dbtype>/c\<dbtype>postgres</dbtype>" \
         -e "/<driver>/c\<driver>org.postgresql.Driver</driver>" \
-        -e "/<DBUrl>/c\<DBUrl>jdbc:postgresql://${COCKROACHDB_HOST}:${COCKROACHDB_PORT}/${test}?${options}</DBUrl>" \
+        -e "/<DBUrl>/c\<DBUrl>jdbc:postgresql://${COCKROACHDB_HOST}:${COCKROACHDB_PORT}/${test}</DBUrl>" \
         -e "/<username>/c\<username>${COCKROACHDB_USER}</username>" \
         -e "/<password>/c\<password>${COCKROACHDB_PASS}</password>" \
+        -e "/<isolation>/c\<isolation>TRANSACTION_REPEATABLE_READ</isolation>" \
+        -e "/<terminals>/c\<terminals>64</terminals>" \
+        -e "/<scalefactor>/c\<scalefactor>16</scalefactor>" \
+        -e "/<rate>/c\<rate>unlimited</rate>" \
+        -e "/<time>/c\<time>300</time>" \
         "config/sample_${test}_config.xml";
 
     echo "cockroachdb: loading $test"
@@ -51,16 +52,17 @@ done
 mysql -h $GALERA_HOST -P $GALERA_PORT -u $GALERA_USER --password=$GALERA_PASS -e "$PREPARATION_QUERY"
 
 for test in wikipedia linkbench; do
-    options=""
-    if [ $test = "linkbench" ]; then
-        options="elideSetAutoCommits=true&amp;useLocalTransactionState=true&amp;allowMultiQueries=true&amp;useLocalSessionState=true&amp;useAffectedRows=true"
-    fi
     sed -i \
         -e "/<dbtype>/c\<dbtype>mysql</dbtype>" \
         -e "/<driver>/c\<driver>com.mysql.jdbc.Driver</driver>" \
-        -e "/<DBUrl>/c\<DBUrl>jdbc:mysql://${GALERA_HOST}:${GALERA_PORT}/${test}?${options}</DBUrl>" \
+        -e "/<DBUrl>/c\<DBUrl>jdbc:mysql://${GALERA_HOST}:${GALERA_PORT}/${test}</DBUrl>" \
         -e "/<username>/c\<username>${GALERA_USER}</username>" \
         -e "/<password>/c\<password>${GALERA_PASS}</password>" \
+        -e "/<isolation>/c\<isolation>TRANSACTION_REPEATABLE_READ</isolation>" \
+        -e "/<terminals>/c\<terminals>64</terminals>" \
+        -e "/<scalefactor>/c\<scalefactor>16</scalefactor>" \
+        -e "/<rate>/c\<rate>unlimited</rate>" \
+        -e "/<time>/c\<time>300</time>" \
         "config/sample_${test}_config.xml";
 
     echo "galera: loading $test"
