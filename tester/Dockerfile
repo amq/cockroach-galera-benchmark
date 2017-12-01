@@ -49,7 +49,12 @@ RUN cd /tmp && wget https://github.com/brianfrankcooper/YCSB/releases/download/$
 RUN cd /tmp && git clone https://github.com/oltpbenchmark/oltpbench.git && \
     mv oltpbench /scripts/oltpbench && \
     cd /scripts/oltpbench && \
-    git checkout ${OLTPBENCH_VERSION} && \
+    git checkout ${OLTPBENCH_VERSION}
+
+COPY Procedure.java /scripts/oltpbench/src/com/oltpbenchmark/api
+COPY linkbench /scripts/oltpbench/src/com/oltpbenchmark/benchmarks/linkbench
+
+RUN cd /scripts/oltpbench && \
     ant
 
 COPY . /scripts

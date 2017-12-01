@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<dialects>
+    <dialect type="Postgres">
+        <procedure name="AddLink">
+            <statement name="insertNoCount">
+                INSERT INTO linktable (id1, id2, link_type, visibility, time, version, data) VALUES (?,?,?,?,?,?,HEXDATA) ON CONFLICT (id1, id2, link_type) DO UPDATE SET visibility = EXCLUDED.visibility
+            </statement>
+            <statement name="updateCount">
+                INSERT INTO counttable (id, link_type, count, time, version) VALUES (?, ?, ?, ?, 0) ON CONFLICT (id, link_type) DO UPDATE SET count = counttable.count + ?, version = counttable.version + 1, time = ?
+            </statement>
+        </procedure>
+        <procedure name="GetLinkList">
+            <statement name="getLinkListsStmt">
+                select id1, id2, link_type, visibility, data, time, version from  linktable where id1 = ? and link_type = ? and time &gt;= ? and time &lt;= ? and visibility = ? order by time desc offset ? limit ?
+            </statement>
+        </procedure>
+        <procedure name="DeleteLink">
+            <statement name="updateLink">
+                INSERT INTO counttable (id, link_type, count, time, version) VALUES (?, ?, 0, ?, 0) ON CONFLICT (id, link_type) DO UPDATE SET count = IF (counttable.count = 0, 0, counttable.count - 1), time = ?, version = counttable.version + 1
+            </statement>
+        </procedure>
+    </dialect>
+</dialects>
