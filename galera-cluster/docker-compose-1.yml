@@ -4,7 +4,7 @@ services:
 
   galera-01:
     hostname: galera-01
-    image: mariadb:${MARIADB_VERSION:-10.2}
+    image: mariadb:${MARIADB_VERSION:-10.2.11}
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
       - MYSQL_INITDB_SKIP_TZINFO=1

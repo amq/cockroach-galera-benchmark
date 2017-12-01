@@ -177,7 +177,7 @@ docker stack deploy --compose-file=docker-compose-1.yml galera
 ### 14. Verify that galera works
 
 ```
-docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2} mysql -h galera-01
+docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h galera-01
 
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
@@ -234,7 +234,7 @@ docker stack deploy --compose-file=docker-compose-3.yml galera
 ### 20. Verify that galera cluster has 3 members
 
 ```
-docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2} mysql -h galera-01
+docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h galera-01
 
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
