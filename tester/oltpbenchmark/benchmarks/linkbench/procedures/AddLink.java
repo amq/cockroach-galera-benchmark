@@ -39,8 +39,8 @@ public class AddLink extends Procedure{
 
     public final SQLStmt insertNoCount = new SQLStmt(
             "INSERT INTO linktable " +
-            "(id1, id2, link_type, visibility, data, time, version) VALUES " +
-            "(?,?,?,?,HEXDATA,?,?) ON DUPLICATE KEY UPDATE visibility = VALUES(visibility)"
+            "(id1, id2, link_type, visibility, time, version, data) VALUES " +
+            "(?,?,?,?,?,?,HEXDATA) ON DUPLICATE KEY UPDATE visibility = VALUES(visibility)"
     );
 
     public final SQLStmt updateCount = new SQLStmt(

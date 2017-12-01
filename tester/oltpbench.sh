@@ -51,7 +51,7 @@ done
 
 mysql -h $GALERA_HOST -P $GALERA_PORT -u $GALERA_USER --password=$GALERA_PASS -e "$PREPARATION_QUERY"
 
-for test in wikipedia linkbench; do
+for test in linkbench twitter; do
     sed -i \
         -e "/<dbtype>/c\<dbtype>mysql</dbtype>" \
         -e "/<driver>/c\<driver>com.mysql.jdbc.Driver</driver>" \
