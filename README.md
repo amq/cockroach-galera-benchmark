@@ -7,7 +7,6 @@
 - the performance of CockroachDB seems to be too low, make sure I didn't miss something obvious
 - investigate oltpbench compatibility issues, possibly add a dialect file
 - evaluate special / pareto / zipfian distribution usage for sysbench
-- try MaxScale load balancer to balance reads while sending writes to a single node
 - launch the final testing, I expect it to last for a few days without pauses
 
 ## Testing process
@@ -149,6 +148,8 @@ http://ip-of-node-01:3000/
 cd ../cockroachdb-cluster
 docker stack deploy --compose-file=docker-compose-1.yml cockroachdb
 ```
+
+*Note: it will take a minute or so till Swarm downloads the image and deploys the service*
 
 ### 11. Initialize cockroachdb cluster
 
