@@ -51,8 +51,7 @@ RUN cd /tmp && git clone https://github.com/oltpbenchmark/oltpbench.git && \
     cd /scripts/oltpbench && \
     git checkout ${OLTPBENCH_VERSION}
 
-COPY Procedure.java /scripts/oltpbench/src/com/oltpbenchmark/api
-COPY linkbench /scripts/oltpbench/src/com/oltpbenchmark/benchmarks/linkbench
+COPY oltpbenchmark /scripts/oltpbench/src/com/oltpbenchmark
 
 RUN cd /scripts/oltpbench && \
     ant

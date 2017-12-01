@@ -65,7 +65,7 @@ public class AddLink extends Procedure{
         }
         
         //gross hack
-        insertNoCount.setSQL(insertNoCount.getSQL().replaceFirst("HEXDATA", StringUtil.stringLiteral(l.data)));
+        insertNoCount.setSQL(insertNoCount.getSQL().replaceFirst("HEXDATA", StringUtil.stringLiteral(l.data)).replace("'","\'"));
         
         // if the link is already there then update its visibility
         // only update visibility; skip updating time, version, etc. 
