@@ -42,7 +42,7 @@ for test in linkbench twitter; do
     for attempt in {1..3}; do
         sleep $WARMUP_TIME
         echo "cockroachdb: started oltpbench $test (attempt $attempt) at $(date +'%H:%m')"
-        time ./oltpbenchmark -b $test -c config/sample_${test}_config.xml --execute=true
+        time ./oltpbenchmark -b $test -c config/sample_${test}_config.xml --execute=true -s 1
         echo "cockroachdb: finished oltpbench $test (attempt $attempt) at $(date +'%H:%m')"
     done
 done
@@ -71,7 +71,7 @@ for test in linkbench twitter; do
     for attempt in {1..3}; do
         sleep $WARMUP_TIME
         echo "galera: started oltpbench $test (attempt $attempt) at $(date +'%H:%m')"
-        time ./oltpbenchmark -b $test -c config/sample_${test}_config.xml --execute=true
+        time ./oltpbenchmark -b $test -c config/sample_${test}_config.xml --execute=true -s 1
         echo "galera: finished oltpbench $test (attempt $attempt) at $(date +'%H:%m')"
     done
 done
