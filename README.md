@@ -38,12 +38,12 @@ for i in {1..3}; do
     docker-machine create \
     --engine-storage-driver overlay2 \
     --driver amazonec2 \
-    --amazonec2-region eu-central-1 \
+    --amazonec2-region eu-west-1 \
     --amazonec2-zone a \
-    --amazonec2-instance-type r4.xlarge \
+    --amazonec2-instance-type m5.xlarge \
     --amazonec2-volume-type gp2 \
     --amazonec2-root-size 500 \
-    --amazonec2-ami ami-3d2bab52 \
+    --amazonec2-ami ami-8fd760f6 \
     ${BASE_HOSTNAME:-node}-0$i
 done
 ```
@@ -70,6 +70,18 @@ cat /proc/sys/fs/file-max
 Storage driver must be `overlay2`
 ```
 docker info | grep "Storage Driver"
+```
+
+Install chrony for time synchronization
+```
+apt update && apt install chrony
+systemctl enable chrony
+systemctl start chrony
+```
+
+Check chrony status
+```
+chronyc tracking
 ```
 
 When done, exit from ssh.
