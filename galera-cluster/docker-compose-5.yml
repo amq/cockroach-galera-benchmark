@@ -1,0 +1,109 @@
+version: "3.1"
+
+services:
+
+  galera-04:
+    hostname: galera-04
+    image: mariadb:${MARIADB_VERSION:-10.2.11}
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+      - MYSQL_INITDB_SKIP_TZINFO=1
+    command: |-
+      --max-connections=2000
+      --query-cache-type=0
+      --query-cache-size=0
+      --performance-schema=0
+      --log-bin=1
+      --log-slave-updates=1
+      --binlog-format=ROW
+      --binlog-cache-size=16M
+      --innodb-flush-method=O_DIRECT
+      --innodb-buffer-pool-size=4096M
+      --innodb-buffer-pool-instances=4
+      --innodb-log-file-size=512M
+      --innodb-log-buffer-size=64M
+      --sync-binlog=0
+      --innodb-flush-log-at-trx-commit=2
+      --innodb-autoinc-lock-mode=2
+      --wsrep_cluster_address=gcomm://galera-01
+      --wsrep-provider=/usr/lib/galera/libgalera_smm.so
+      --wsrep_on=ON
+      --wsrep-sst-method=rsync
+      --wsrep-slave-threads=8
+      --wsrep-provider-options="gcache.size=512M;gcache.page_size=512M;gcs.fc_limit=512"
+    volumes:
+      - galera-04:/var/lib/mysql
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-04
+
+  mysql-exporter-04:
+    image: prom/mysqld-exporter:${MYSQL_EXPORTER_VERSION:-v0.10.0}
+    environment:
+      - DATA_SOURCE_NAME=root@(galera-04:3306)/
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-04
+
+  galera-05:
+    hostname: galera-05
+    image: mariadb:${MARIADB_VERSION:-10.2.11}
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+      - MYSQL_INITDB_SKIP_TZINFO=1
+    command: |-
+      --max-connections=2000
+      --query-cache-type=0
+      --query-cache-size=0
+      --performance-schema=0
+      --log-bin=1
+      --log-slave-updates=1
+      --binlog-format=ROW
+      --binlog-cache-size=16M
+      --innodb-flush-method=O_DIRECT
+      --innodb-buffer-pool-size=4096M
+      --innodb-buffer-pool-instances=4
+      --innodb-log-file-size=512M
+      --innodb-log-buffer-size=64M
+      --sync-binlog=0
+      --innodb-flush-log-at-trx-commit=2
+      --innodb-autoinc-lock-mode=2
+      --wsrep_cluster_address=gcomm://galera-01
+      --wsrep-provider=/usr/lib/galera/libgalera_smm.so
+      --wsrep_on=ON
+      --wsrep-sst-method=rsync
+      --wsrep-slave-threads=8
+      --wsrep-provider-options="gcache.size=512M;gcache.page_size=512M;gcs.fc_limit=512"
+    volumes:
+      - galera-05:/var/lib/mysql
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-05
+
+  mysql-exporter-05:
+    image: prom/mysqld-exporter:${MYSQL_EXPORTER_VERSION:-v0.10.0}
+    environment:
+      - DATA_SOURCE_NAME=root@(galera-05:3306)/
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-05
+
+volumes:
+  galera-04:
+  galera-05:
+
+networks:
+  mynet:
+    external: true
