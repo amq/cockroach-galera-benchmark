@@ -2,9 +2,13 @@
 
 - did a *preliminary* single-node testing, see [cockroachdb/cockroach#17777](https://github.com/cockroachdb/cockroach/issues/17777#issuecomment-347243141)
 
+## Warning
+
+- testing in cloud means testing in a noisy environment. Fluctuations of up to 20% were observed with `m5.xlarge`
+
 ## Roadmap
 
-- the performance of CockroachDB seems to be too low, make sure I didn't miss something obvious
+- the performance of CockroachDB seems to be lower than expected, make sure I didn't miss something obvious
 - investigate oltpbench compatibility issues, possibly add a dialect file
 - evaluate special / pareto / zipfian distribution usage for sysbench
 - launch the final testing, I expect it to last for a few days without pauses
@@ -50,7 +54,21 @@ done
 
 Refer to [https://docs.docker.com/machine/drivers/aws/](docs) on how to set up the credentials
 
-### 2. Verify that system settings are above recommended
+Afterwards, add the following inbound rules for the `docker-machine` security group in AWS management console:
+```
+All traffic 172.0.0.0/8
+All traffic your-ip/32
+```
+
+### 2. Install chrony
+
+```
+for i in {1..3}; do
+    docker-machine ssh ${BASE_HOSTNAME:-node}-0$i -- "sudo apt update && sudo apt -y install chrony"
+done
+```
+
+### 3. Verify that system settings are above recommended
 
 ```
 docker-machine ssh ${BASE_HOSTNAME:-node}-01
@@ -72,21 +90,16 @@ Storage driver must be `overlay2`
 docker info | grep "Storage Driver"
 ```
 
-Install chrony for time synchronization
-```
-apt update && apt install chrony
-systemctl enable chrony
-systemctl start chrony
-```
-
-Check chrony status
+Check `chrony` status
 ```
 chronyc tracking
 ```
 
-When done, exit from ssh.
+*You should see Leap status: Normal*
 
-### 3. Initialize Swarm on first node
+*When done, exit from ssh*
+
+### 4. Initialize Swarm on first node
 
 **Locally**
 
@@ -99,7 +112,7 @@ docker swarm init --advertise-addr=eth1
 
 ```
 eval "$(docker-machine env ${BASE_HOSTNAME:-node}-01)"
-docker swarm init --advertise-addr=ens3
+docker swarm init --advertise-addr=ens5
 ```
 
 Get the join command:
@@ -107,7 +120,7 @@ Get the join command:
 docker swarm join-token worker | grep docker | xargs
 ```
 
-### 4. Join Swarm on other nodes
+### 5. Join Swarm on other nodes
 
 ```
 eval "$(docker-machine env ${BASE_HOSTNAME:-node}-02)"
@@ -115,28 +128,39 @@ eval "$(docker-machine env ${BASE_HOSTNAME:-node}-02)"
 
 *Run the join command from last step and repeat for node-03*
 
-### 5. Create attachable network
+### 6. Verify that Swarm works
+
+```
+eval "$(docker-machine env ${BASE_HOSTNAME:-node}-01)"
+docker node ls
+```
+
+*You should see 3 nodes, all Ready and Active*
+
+### 7. Create attachable network
 
 ```
 docker network create --driver overlay --attachable mynet
 ```
 
-### 6. Launch monitoring services
+### 8. Launch monitoring services
 
 ```
 cd monitoring
 docker stack deploy --compose-file=docker-compose.yml monitoring
 ```
 
-### 7. Load prometheus configuration
+*Note: it will take a minute or so till Swarm downloads the image and deploys the service*
+
+### 9. Load prometheus configuration
 
 ```
-docker cp monitoring/prometheus.yml monitoring_prometheus.1.$(docker service ps --no-trunc -f 'desired-state=running' -f 'name=monitoring_prometheus.1' monitoring_prometheus -q):/etc/prometheus/prometheus.yml
+docker cp prometheus.yml monitoring_prometheus.1.$(docker service ps --no-trunc -f 'desired-state=running' -f 'name=monitoring_prometheus.1' monitoring_prometheus -q):/etc/prometheus/prometheus.yml
 docker service scale monitoring_prometheus=0
 docker service scale monitoring_prometheus=1
 ```
 
-### 8. Verify that monitoring works
+### 10. Verify that monitoring works
 
 Prometheus  
 http://ip-of-node-01:9090/
@@ -144,7 +168,7 @@ http://ip-of-node-01:9090/
 Grafana  
 http://ip-of-node-01:3000/
 
-### 9. Import grafana dashboards
+### 11. Import grafana dashboards
 
 [CockroachDB](https://github.com/cockroachdb/cockroach/tree/master/monitoring/grafana-dashboards)
 
@@ -154,40 +178,39 @@ http://ip-of-node-01:3000/
 
 [Docker Swarm](https://grafana.com/dashboards/2603)
 
-### 10. Launch cockroachdb-01
+### 12. Launch cockroachdb-01
 
 ```
 cd ../cockroachdb-cluster
 docker stack deploy --compose-file=docker-compose-1.yml cockroachdb
 ```
 
-*Note: it will take a minute or so till Swarm downloads the image and deploys the service*
-
-### 11. Initialize cockroachdb cluster
-
-```
-docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} init --host=cockroachdb-01 --insecure
-```
-
-### 12. Verify that cockroachdb works
+### 13. Verify that cockroachdb works
 
 Web console  
 http://ip-of-node-01:8080/
 
 ```
 docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} node status --host=cockroachdb-01 --insecure
+```
 
+*You should see one node*
+
+```
 docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} sql --host=cockroachdb-01 --insecure
 ```
 
-### 13. Launch galera-01
+*You should see an SQL console*
+
+
+### 14. Launch galera-01
 
 ```
 cd ../galera-cluster
 docker stack deploy --compose-file=docker-compose-1.yml galera
 ```
 
-### 14. Verify that galera works
+### 15. Verify that galera works
 
 ```
 docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h galera-01
@@ -195,7 +218,7 @@ docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
 
-### 15. How to clean up and start from scratch
+### 16. How to clean up and start from scratch
 
 ```
 docker stack rm monitoring
@@ -213,38 +236,47 @@ The volume commands can be shortened. This will remove all unused volumes and im
 docker prune -af
 ```
 
-### 16. Run single-node tests
+### 17. Run single-node tests
 
 ```
 cd ../tester
 docker build -t tester .
 
-docker run -i --rm --network=mynet tester /scripts/sysbench.sh > sysbench-1.log
-docker run -i --rm --network=mynet tester /scripts/ycsb.sh > ycsb-1.log
-docker run -i --rm --network=mynet tester /scripts/oltpbench.sh > oltpbench-1.log
+docker run -it --network=mynet tester bash
+cd /scripts
+./sysbench.sh | tee sysbench-1.log
+./ycsb.sh | tee ycsb-1.log
+./oltpbench.sh | tee oltpbench-1.log
+exit
+docker cp container_id:/scripts/sysbench-1.log ./results-1/
+docker cp container_id:/scripts/ycsb-1.log ./results-1/
+docker cp container_id:/scripts/oltpbench-1.log ./results-1/
+docker cp container_id:/scripts/oltpbench/results ./results-1/
 ```
 
-### 17. Launch cockroachdb-02 and 03
+### 18. Launch cockroachdb-02 and 03
 
 ```
 cd ../cockroachdb-cluster
 docker stack deploy --compose-file=docker-compose-3.yml cockroachdb
 ```
 
-### 18. Verify that cockroachdb cluster has 3 members
+### 19. Verify that cockroachdb cluster has 3 members
 
 ```
 docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} node status --host=cockroachdb-01 --insecure
 ```
 
-### 19. Launch galera-02 and 03
+*You should see 3 nodes*
+
+### 20. Launch galera-02 and 03
 
 ```
 cd ../galera-cluster
 docker stack deploy --compose-file=docker-compose-3.yml galera
 ```
 
-### 20. Verify that galera cluster has 3 members
+### 21. Verify that galera cluster has 3 members
 
 ```
 docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h galera-01
@@ -252,12 +284,19 @@ docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
 
-### 21. Run testes on 3 nodes
+### 22. Run testes on 3 nodes
 
 ```
-docker run -i --rm tester /scripts/sysbench.sh > sysbench-3.log
-docker run -i --rm tester /scripts/ycsb.sh > ycsb-3.log
-docker run -i --rm tester /scripts/oltpbench.sh > oltpbench-3.log
+docker run -it --network=mynet tester bash
+cd /scripts
+./sysbench.sh | tee sysbench-3.log
+./ycsb.sh | tee ycsb-3.log
+./oltpbench.sh | tee oltpbench-3.log
+exit
+docker cp container_id:/scripts/sysbench-3.log ./results-3/
+docker cp container_id:/scripts/ycsb-3.log ./results-3/
+docker cp container_id:/scripts/oltpbench-3.log ./results-3/
+docker cp container_id:/scripts/oltpbench/results ./results-3/
 ```
 
 ### Parsing
@@ -292,6 +331,7 @@ With YCSB we will have an additional arragement:
 - throughput (transactions per second)
 - latency (average and 95%) with a varying number of clients
 - latency (average and 95%) with a varying number of transactions per second
+- degradation over time
 - iostat
 - CPU usage
 - database size
