@@ -12,6 +12,7 @@
 - investigate oltpbench compatibility issues, possibly add a dialect file
 - evaluate special / pareto / zipfian distribution usage for sysbench
 - launch the final testing, I expect it to last for a few days without pauses
+- try querying all hosts instead of once, by load-balancing the traffic using nginx or haproxy
 
 ## Testing process
 
@@ -97,7 +98,7 @@ chronyc tracking
 
 *You should see Leap status: Normal*
 
-*When done, exit from ssh*
+When done, exit from ssh
 
 ### 4. Initialize Swarm on first node
 
@@ -135,8 +136,6 @@ eval "$(docker-machine env ${BASE_HOSTNAME:-node}-01)"
 docker node ls
 ```
 
-*You should see 3 nodes, all Ready and Active*
-
 ### 7. Create attachable network
 
 ```
@@ -156,27 +155,27 @@ docker stack deploy --compose-file=docker-compose.yml monitoring
 
 ```
 docker cp prometheus.yml monitoring_prometheus.1.$(docker service ps --no-trunc -f 'desired-state=running' -f 'name=monitoring_prometheus.1' monitoring_prometheus -q):/etc/prometheus/prometheus.yml
+```
+
+Restart prometheus
+```
 docker service scale monitoring_prometheus=0
 docker service scale monitoring_prometheus=1
 ```
 
 ### 10. Verify that monitoring works
 
-Prometheus  
-http://ip-of-node-01:9090/
-
-Grafana  
-http://ip-of-node-01:3000/
+- Prometheus: `http://ip-of-node-01:9090/`
+- Grafana: `http://ip-of-node-01:3000/`
 
 ### 11. Import grafana dashboards
 
-[CockroachDB](https://github.com/cockroachdb/cockroach/tree/master/monitoring/grafana-dashboards)
+- [CockroachDB](https://github.com/cockroachdb/cockroach/tree/master/monitoring/grafana-dashboards)
+- [MySQL and Galera](https://github.com/percona/grafana-dashboards/tree/master/dashboards)
+- [System information](https://grafana.com/dashboards/405)
+- [Docker Swarm](https://grafana.com/dashboards/2603)
 
-[MySQL and Galera](https://github.com/percona/grafana-dashboards/tree/master/dashboards)
-
-[System information](https://grafana.com/dashboards/405)
-
-[Docker Swarm](https://grafana.com/dashboards/2603)
+Afterwards, change the timezone of all dashboards to either `Local browser time` or `UTC` to avoid confusion
 
 ### 12. Launch cockroachdb-01
 
@@ -185,89 +184,108 @@ cd ../cockroachdb-cluster
 docker stack deploy --compose-file=docker-compose-1.yml cockroachdb
 ```
 
-### 13. Verify that cockroachdb works
-
-Web console  
-http://ip-of-node-01:8080/
-
+Verify that cockroachdb works
 ```
 docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} node status --host=cockroachdb-01 --insecure
 ```
 
-*You should see one node*
-
+SQL console
 ```
 docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} sql --host=cockroachdb-01 --insecure
 ```
 
-*You should see an SQL console*
+Web console: `http://ip-of-node-01:8080/`
 
-
-### 14. Launch galera-01
-
-```
-cd ../galera-cluster
-docker stack deploy --compose-file=docker-compose-1.yml galera
-```
-
-### 15. Verify that galera works
-
-```
-docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h galera-01
-
-SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
-```
-
-### 16. How to clean up and start from scratch
-
-```
-docker stack rm monitoring
-docker stack rm cockroachdb
-docker stack rm galera
-docker volume rm monitoring_prometheus
-docker volume rm monitoring_prometheus-config
-docker volume rm monitoring_grafana
-docker volume rm cockroachdb_cockroachdb-01
-docker volume rm galera_galera-01
-```
-
-The volume commands can be shortened. This will remove all unused volumes and images:
-```
-docker prune -af
-```
-
-### 17. Run single-node tests
+### 13. Build tester image
 
 ```
 cd ../tester
 docker build -t tester .
-
-docker run -it --network=mynet tester bash
-cd /scripts
-./sysbench.sh | tee sysbench-1.log
-./ycsb.sh | tee ycsb-1.log
-./oltpbench.sh | tee oltpbench-1.log
-exit
-docker cp container_id:/scripts/sysbench-1.log ./results-1/
-docker cp container_id:/scripts/ycsb-1.log ./results-1/
-docker cp container_id:/scripts/oltpbench-1.log ./results-1/
-docker cp container_id:/scripts/oltpbench/results ./results-1/
 ```
 
-### 18. Launch cockroachdb-02 and 03
+### 14. Run single-node cockroachdb tests
+
+Run
+```
+docker run -it --network=mynet tester bash
+cd /scripts
+./sysbench.sh cockroachdb | tee cockroachdb-sysbench.log
+./ycsb.sh cockroachdb | tee cockroachdb-ycsb.log
+./oltpbench.sh cockroachdb | tee cockroachdb-oltpbench.log
+exit
+```
+
+Copy results
+```
+docker cp container_id:/scripts/sysbench.log ./results/cockroachdb-1/
+docker cp container_id:/scripts/ycsb.log ./results/cockroachdb-1/
+docker cp container_id:/scripts/oltpbench.log ./results/cockroachdb-1/
+docker cp container_id:/scripts/oltpbench/results ./results/cockroachdb-1/oltpbench/
+```
+
+### 15. Launch cockroachdb-02 and 03
 
 ```
 cd ../cockroachdb-cluster
 docker stack deploy --compose-file=docker-compose-3.yml cockroachdb
 ```
 
-### 19. Verify that cockroachdb cluster has 3 members
-
+Verify that cockroachdb cluster has 3 members
 ```
 docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} node status --host=cockroachdb-01 --insecure
 ```
 
-*You should see 3 nodes*
+### 16. Run 3-node cockroachdb tests
+
+Repeat *Run* commands from x
+
+Copy results
+```
+docker cp container_id:/scripts/sysbench.log ./results/cockroachdb-3/
+docker cp container_id:/scripts/ycsb.log ./results/cockroachdb-3/
+docker cp container_id:/scripts/oltpbench.log ./results/cockroachdb-3/
+docker cp container_id:/scripts/oltpbench/results ./results/cockroachdb-3/oltpbench/
+```
+
+### 17. Stop cockroachdb
+
+```
+docker service rm cockroachdb
+```
+
+### 18. Launch galera-01
+
+```
+cd ../galera-cluster
+docker stack deploy --compose-file=docker-compose-1.yml galera
+```
+
+Verify that galera works
+```
+docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h galera-01
+
+SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
+```
+
+### 19. Run single-node galera tests
+
+Run
+```
+docker run -it --network=mynet tester bash
+cd /scripts
+./sysbench.sh galera | tee galera-sysbench.log
+./ycsb.sh galera | tee galera-ycsb.log
+./oltpbench.sh galera | tee galera-oltpbench.log
+exit
+```
+
+Copy results
+```
+docker cp container_id:/scripts/sysbench.log ./results/galera-1/
+docker cp container_id:/scripts/ycsb.log ./results/galera-1/
+docker cp container_id:/scripts/oltpbench.log ./results/galera-1/
+docker cp container_id:/scripts/oltpbench/results ./results/galera-1/oltpbench/
+```
 
 ### 20. Launch galera-02 and 03
 
@@ -276,27 +294,46 @@ cd ../galera-cluster
 docker stack deploy --compose-file=docker-compose-3.yml galera
 ```
 
-### 21. Verify that galera cluster has 3 members
-
+Verify that galera cluster has 3 members
 ```
 docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h galera-01
 
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
 
-### 22. Run testes on 3 nodes
+### 21. Run 3-node cockroachdb tests
 
+Repeat *Run* commands from x
+
+Copy results
 ```
-docker run -it --network=mynet tester bash
-cd /scripts
-./sysbench.sh | tee sysbench-3.log
-./ycsb.sh | tee ycsb-3.log
-./oltpbench.sh | tee oltpbench-3.log
-exit
-docker cp container_id:/scripts/sysbench-3.log ./results-3/
-docker cp container_id:/scripts/ycsb-3.log ./results-3/
-docker cp container_id:/scripts/oltpbench-3.log ./results-3/
-docker cp container_id:/scripts/oltpbench/results ./results-3/
+docker cp container_id:/scripts/sysbench.log ./results/galera-3/
+docker cp container_id:/scripts/ycsb.log ./results/galera-3/
+docker cp container_id:/scripts/oltpbench.log ./results/galera-3/
+docker cp container_id:/scripts/oltpbench/results ./results/galera-3/oltpbench/
+```
+
+### How to clean up and start from scratch
+
+Stacks
+```
+docker stack rm monitoring
+docker stack rm cockroachdb
+docker stack rm galera
+```
+
+Volumes
+```
+docker volume rm monitoring_prometheus
+docker volume rm monitoring_prometheus-config
+docker volume rm monitoring_grafana
+docker volume rm cockroachdb_cockroachdb-01
+docker volume rm galera_galera-01
+```
+
+Alternatively, remove all volumes and images
+```
+docker prune -af
 ```
 
 ### Parsing
