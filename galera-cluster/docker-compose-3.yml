@@ -9,7 +9,7 @@ services:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
       - MYSQL_INITDB_SKIP_TZINFO=1
     command: |-
-      --max-connections=2000
+      --max-connections=400
       --query-cache-type=0
       --query-cache-size=0
       --performance-schema=0
@@ -58,7 +58,7 @@ services:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
       - MYSQL_INITDB_SKIP_TZINFO=1
     command: |-
-      --max-connections=2000
+      --max-connections=400
       --query-cache-type=0
       --query-cache-size=0
       --performance-schema=0
