@@ -1,0 +1,24 @@
+version: "3.3"
+
+services:
+
+  load-balancer:
+    hostname: load-balancer
+    image: haproxy
+    configs:
+      - source: load-balancer
+        target: /usr/local/etc/haproxy/haproxy.cfg
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-01
+
+configs:
+  load-balancer:
+    file: haproxy.cfg
+
+networks:
+  mynet:
+    external: true
