@@ -32,13 +32,14 @@ export PREPARATION_QUERY="
 
 cd ycsb
 
-PGPASSWORD=$COCKROACHDB_PASS psql -h $COCKROACHDB_HOST -p $COCKROACHDB_PORT -U $COCKROACHDB_USER -c "$PREPARATION_QUERY"
-
 if [ "$1" == "cockroachdb" ]; then
-    for test in a b d; do
-        echo "cockroachdb: loading $test"
-        time ./bin/ycsb load jdbc -P workloads/workload$test -p db.driver=org.postgresql.Driver -p db.url=jdbc:postgresql://$COCKROACHDB_HOST:$COCKROACHDB_PORT/ycsb -p db.user=$COCKROACHDB_USER -p db.passwd=$COCKROACHDB_PASS -p db.batchsize=1000 -p recordcount=$RECORD_COUNT
 
+    # single loading for consequent worload A-D runs, as per https://github.com/brianfrankcooper/YCSB/wiki/Core-Workloads#running-the-workloads
+    PGPASSWORD=$COCKROACHDB_PASS psql -h $COCKROACHDB_HOST -p $COCKROACHDB_PORT -U $COCKROACHDB_USER -c "$PREPARATION_QUERY"
+    echo "cockroachdb: loading a"
+    time ./bin/ycsb load jdbc -P workloads/workloada -p db.driver=org.postgresql.Driver -p db.url=jdbc:postgresql://$COCKROACHDB_HOST:$COCKROACHDB_PORT/ycsb -p db.user=$COCKROACHDB_USER -p db.passwd=$COCKROACHDB_PASS -p db.batchsize=1000 -p recordcount=$RECORD_COUNT
+
+    for test in a b; do
         for threads in 1 2 4 8 16 32 64 96 128; do
             sleep $WARMUP_TIME
             echo "cockroachdb: started ycsb $test ($threads threads) at $(date +'%H:%m')"
@@ -46,23 +47,20 @@ if [ "$1" == "cockroachdb" ]; then
             echo "cockroachdb: finished ycsb $test ($threads threads) at $(date +'%H:%m')"
         done
 
-        for tps in {500..10000..500}; do
+        for tps in 64 128 192 256 320; do
             sleep $WARMUP_TIME
-            echo "cockroachdb: started ycsb $test ($threads tps) at $(date +'%H:%m')"
-            time ./bin/ycsb run jdbc -P workloads/workload$test -p db.driver=org.postgresql.Driver -p db.url=jdbc:postgresql://$COCKROACHDB_HOST:$COCKROACHDB_PORT/ycsb -p db.user=$COCKROACHDB_USER -p db.passwd=$COCKROACHDB_PASS -p operationcount=0 -p maxexecutiontime=60 -s -target $tps
-            echo "cockroachdb: finished ycsb $test ($threads tps) at $(date +'%H:%m')"
+            echo "cockroachdb: started ycsb $test ($tps tps) at $(date +'%H:%m')"
+            time ./bin/ycsb run jdbc -P workloads/workload$test -p db.driver=org.postgresql.Driver -p db.url=jdbc:postgresql://$COCKROACHDB_HOST:$COCKROACHDB_PORT/ycsb -p db.user=$COCKROACHDB_USER -p db.passwd=$COCKROACHDB_PASS -p operationcount=0 -p maxexecutiontime=60 -s -threads 16 -target $tps
+            echo "cockroachdb: finished ycsb $test ($tps tps) at $(date +'%H:%m')"
         done
-
-        PGPASSWORD=$COCKROACHDB_PASS psql -h $COCKROACHDB_HOST -p $COCKROACHDB_PORT -U $COCKROACHDB_USER -c "TRUNCATE TABLE ycsb.usertable"
     done
 
 elif [ "$1" == "galera" ]; then
     mysql -h $GALERA_HOST -P $GALERA_PORT -u $GALERA_USER --password=$GALERA_PASS -e "$PREPARATION_QUERY"
+    echo "galera: loading a"
+    time ./bin/ycsb load jdbc -P workloads/workloada -p db.driver=com.mysql.jdbc.Driver -p db.url=jdbc:mysql://$GALERA_HOST:$GALERA_PORT/ycsb -p db.user=$GALERA_USER -p db.passwd=$GALERA_PASS -p db.batchsize=1000 -p recordcount=$RECORD_COUNT
 
-    for test in a b d; do
-        echo "galera: loading $test"
-        time ./bin/ycsb load jdbc -P workloads/workload$test -p db.driver=com.mysql.jdbc.Driver -p db.url=jdbc:mysql://$GALERA_HOST:$GALERA_PORT/ycsb -p db.user=$GALERA_USER -p db.passwd=$GALERA_PASS -p db.batchsize=1000 -p recordcount=$RECORD_COUNT
-
+    for test in a b; do
         for threads in 1 2 4 8 16 32 64 96 128; do
             sleep $WARMUP_TIME
             echo "galera: started ycsb $test ($threads threads) at $(date +'%H:%m')"
@@ -70,14 +68,12 @@ elif [ "$1" == "galera" ]; then
             echo "galera: finished ycsb $test ($threads threads) at $(date +'%H:%m')"
         done
 
-        for tps in {500..10000..500}; do
+        for tps in 64 128 192 256 320; do
             sleep $WARMUP_TIME
-            echo "galera: started ycsb $test ($threads tps) at $(date +'%H:%m')"
-            time ./bin/ycsb run jdbc -P workloads/workload$test -p db.driver=com.mysql.jdbc.Driver -p db.url=jdbc:mysql://$GALERA_HOST:$GALERA_PORT/ycsb -p db.user=$GALERA_USER -p db.passwd=$GALERA_PASS -p operationcount=0 -p maxexecutiontime=60 -s -target $tps
-            echo "galera: finished ycsb $test ($threads tps) at $(date +'%H:%m')"
+            echo "galera: started ycsb $test ($tps tps) at $(date +'%H:%m')"
+            time ./bin/ycsb run jdbc -P workloads/workload$test -p db.driver=com.mysql.jdbc.Driver -p db.url=jdbc:mysql://$GALERA_HOST:$GALERA_PORT/ycsb -p db.user=$GALERA_USER -p db.passwd=$GALERA_PASS -p operationcount=0 -p maxexecutiontime=60 -s -threads 16 -target $tps
+            echo "galera: finished ycsb $test ($tps tps) at $(date +'%H:%m')"
         done
-
-        mysql -h $GALERA_HOST -P $GALERA_PORT -u $GALERA_USER --password=$GALERA_PASS -e "TRUNCATE TABLE ycsb.usertable"
     done
 else
     echo "usage: ./ycsb.sh [cockroachdb|galera]"
