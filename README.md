@@ -61,13 +61,15 @@ All traffic 172.0.0.0/8
 All traffic your-ip/32
 ```
 
-### 2. Install chrony
+### 2. Install chrony and iostat
 
 ```
 for i in {1..3}; do
-    docker-machine ssh ${BASE_HOSTNAME:-node}-0$i -- "sudo apt update && sudo apt -y install chrony"
+    docker-machine ssh ${BASE_HOSTNAME:-node}-0$i -- "sudo apt update && sudo apt -y install chrony iostat"
 done
 ```
+
+`iostat` is useful for quick cpu and io monitoring, for documented values use grafana
 
 ### 3. Verify that system settings are above recommended
 
@@ -96,7 +98,7 @@ Check `chrony` status
 chronyc tracking
 ```
 
-*You should see Leap status: Normal*
+You should see `Leap status: Normal`
 
 When done, exit from ssh
 
@@ -149,7 +151,7 @@ cd monitoring
 docker stack deploy --compose-file=docker-compose.yml monitoring
 ```
 
-*Note: it will take a minute or so till Swarm downloads the image and deploys the service*
+Note: it will take a minute or so till Swarm downloads the image and deploys the service
 
 ### 9. Load prometheus configuration
 
@@ -210,16 +212,16 @@ Run
 docker run -it --network=mynet tester bash
 cd /scripts
 ./sysbench.sh cockroachdb | tee cockroachdb-sysbench.log
-./ycsb.sh cockroachdb | tee cockroachdb-ycsb.log
 ./oltpbench.sh cockroachdb | tee cockroachdb-oltpbench.log
+./ycsb.sh cockroachdb | tee cockroachdb-ycsb.log
 exit
 ```
 
 Copy results
 ```
-docker cp container_id:/scripts/sysbench.log ./results/cockroachdb-1/
-docker cp container_id:/scripts/ycsb.log ./results/cockroachdb-1/
-docker cp container_id:/scripts/oltpbench.log ./results/cockroachdb-1/
+docker cp container_id:/scripts/cockroachdb-sysbench.log ./results/cockroachdb-1/
+docker cp container_id:/scripts/cockroachdb-oltpbench.log ./results/cockroachdb-1/
+docker cp container_id:/scripts/cockroachdb-ycsb.log ./results/cockroachdb-1/
 docker cp container_id:/scripts/oltpbench/results ./results/cockroachdb-1/oltpbench/
 ```
 
@@ -237,20 +239,20 @@ docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:
 
 ### 16. Run 3-node cockroachdb tests
 
-Repeat *Run* commands from x
+*Repeat Run commands from 14*
 
 Copy results
 ```
-docker cp container_id:/scripts/sysbench.log ./results/cockroachdb-3/
-docker cp container_id:/scripts/ycsb.log ./results/cockroachdb-3/
-docker cp container_id:/scripts/oltpbench.log ./results/cockroachdb-3/
+docker cp container_id:/scripts/cockroachdb-sysbench.log ./results/cockroachdb-3/
+docker cp container_id:/scripts/cockroachdb-oltpbench.log ./results/cockroachdb-3/
+docker cp container_id:/scripts/cockroachdb-ycsb.log ./results/cockroachdb-3/
 docker cp container_id:/scripts/oltpbench/results ./results/cockroachdb-3/oltpbench/
 ```
 
 ### 17. Stop cockroachdb
 
 ```
-docker service rm cockroachdb
+docker stack rm cockroachdb
 ```
 
 ### 18. Launch galera-01
@@ -274,16 +276,16 @@ Run
 docker run -it --network=mynet tester bash
 cd /scripts
 ./sysbench.sh galera | tee galera-sysbench.log
-./ycsb.sh galera | tee galera-ycsb.log
 ./oltpbench.sh galera | tee galera-oltpbench.log
+./ycsb.sh galera | tee galera-ycsb.log
 exit
 ```
 
 Copy results
 ```
-docker cp container_id:/scripts/sysbench.log ./results/galera-1/
-docker cp container_id:/scripts/ycsb.log ./results/galera-1/
-docker cp container_id:/scripts/oltpbench.log ./results/galera-1/
+docker cp container_id:/scripts/galera-sysbench.log ./results/galera-1/
+docker cp container_id:/scripts/galera-oltpbench.log ./results/galera-1/
+docker cp container_id:/scripts/galera-ycsb.log ./results/galera-1/
 docker cp container_id:/scripts/oltpbench/results ./results/galera-1/oltpbench/
 ```
 
@@ -301,15 +303,15 @@ docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
 
-### 21. Run 3-node cockroachdb tests
+### 21. Run 3-node galera tests
 
-Repeat *Run* commands from x
+*Repeat Run commands from 19*
 
 Copy results
 ```
-docker cp container_id:/scripts/sysbench.log ./results/galera-3/
-docker cp container_id:/scripts/ycsb.log ./results/galera-3/
-docker cp container_id:/scripts/oltpbench.log ./results/galera-3/
+docker cp container_id:/scripts/galera-sysbench.log ./results/galera-3/
+docker cp container_id:/scripts/galera-oltpbench.log ./results/galera-3/
+docker cp container_id:/scripts/galera-ycsb.log ./results/galera-3/
 docker cp container_id:/scripts/oltpbench/results ./results/galera-3/oltpbench/
 ```
 
@@ -351,7 +353,6 @@ cat sysbench-1.log | egrep "threads:|transactions:|queries:|min:|avg:|max:|perce
 - Sysbench OLTP Update-Non-Index
 - YCSB Workload A Update-Heavy (50/50)
 - YCSB Workload B Mostly-Reads (95/5)
-- YCSB Workload D Read-Latest (95/5)
 - OLTP-Bench Linkbench (Facebook)
 - OLTP-Bench Twitter
 
@@ -360,7 +361,7 @@ Each test will have following arrangements:
 - 1, 2, 4, 8, 16, 32, 64, 96, 128, 192, 256 concurrent clients
 
 With YCSB we will have an additional arragement:
-- 500, 1000, ..., 10000 target transactions per second
+- 64 128 192 256 320 target transactions per second
 
 ### Metrics to look for
 
