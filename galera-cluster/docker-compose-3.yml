@@ -34,7 +34,9 @@ services:
     volumes:
       - galera-02:/var/lib/mysql
     networks:
-      - mynet
+      mynet:
+        aliases:
+         - galera
     deploy:
       placement:
         constraints:
@@ -83,7 +85,9 @@ services:
     volumes:
       - galera-03:/var/lib/mysql
     networks:
-      - mynet
+      mynet:
+        aliases:
+         - galera
     deploy:
       placement:
         constraints:

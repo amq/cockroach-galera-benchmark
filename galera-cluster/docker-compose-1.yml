@@ -36,7 +36,9 @@ services:
     volumes:
       - galera-01:/var/lib/mysql
     networks:
-      - mynet
+      mynet:
+        aliases:
+         - galera
     deploy:
       placement:
         constraints:

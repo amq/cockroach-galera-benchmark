@@ -17,7 +17,9 @@ services:
     volumes:
       - cockroachdb-01:/cockroach/cockroach-data
     networks:
-      - mynet
+      mynet:
+        aliases:
+         - cockroachdb
     deploy:
       placement:
         constraints:
