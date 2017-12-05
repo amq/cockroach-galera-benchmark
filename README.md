@@ -4,7 +4,7 @@
 
 ## Warning
 
-- testing in cloud means testing in a noisy environment. Fluctuations of up to 20% were observed with `m5.xlarge`
+- testing in cloud means testing in a noisy environment. Fluctuations of up to 25% were observed with `m5.xlarge`
 
 ## Roadmap
 
@@ -304,6 +304,24 @@ docker cp container_id:/scripts/galera-ycsb.log ./results/galera-3/
 docker cp container_id:/scripts/oltpbench/results ./results/galera-3/oltpbench/
 ```
 
+### Load balancing
+
+You can run the tests while load balancing the queries among all nodes. An improvement of up to 60% has been observed for read workloads
+
+There are 2 options included:
+
+HAProxy (more flexibility)
+```
+load-balancer:26257
+load-balancer:3306
+```
+
+Docker Swarm Mode (much lower overhead)
+```
+cockroachdb:26257
+galera:3306
+```
+
 ### How to clean up and start from scratch
 
 Stacks
@@ -347,7 +365,7 @@ cat sysbench-1.log | egrep "threads:|transactions:|queries:|min:|avg:|max:|perce
 
 Each test will have following arrangements:
 - Single node, 3-node cluster
-- 1, 2, 4, 8, 16, 32, 64, 96, 128, 192, 256 concurrent clients
+- 1, 2, 4, 8, 16, 32, 64, 96, 128 concurrent clients
 
 With YCSB we will have an additional arragement:
 - 64 128 192 256 320 target transactions per second
