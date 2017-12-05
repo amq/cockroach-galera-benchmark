@@ -38,3 +38,7 @@ scrape_configs:
     metrics_path: '/_status/vars'
     static_configs:
       - targets: ['cockroachdb-01:8080', 'cockroachdb-02:8080', 'cockroachdb-03:8080', 'cockroachdb-04:8080', 'cockroachdb-05:8080']
+
+  - job_name: 'haproxy'
+    static_configs:
+      - targets: ['haproxy-exporter:9101']

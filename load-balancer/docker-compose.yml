@@ -4,10 +4,23 @@ services:
 
   load-balancer:
     hostname: load-balancer
-    image: haproxy
+    image: haproxy:${HAPROXY_VERSION:-1.8.0}
+    ports:
+      - "5000:5000"
     configs:
       - source: load-balancer
         target: /usr/local/etc/haproxy/haproxy.cfg
+    networks:
+      - mynet
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ${BASE_HOSTNAME:-node}-01
+
+  haproxy-exporter:
+    hostname: haproxy-exporter
+    image: quay.io/prometheus/haproxy-exporter:${HAPROXY_EXPORTER_VERSION:-v0.8.0}
+    command: --haproxy.scrape-uri="http://load-balancer:5000/haproxy?stats;csv"
     networks:
       - mynet
     deploy:
