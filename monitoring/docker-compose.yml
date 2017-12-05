@@ -1,4 +1,4 @@
-version: "3.1"
+version: "3.3"
 
 services:
 
@@ -7,8 +7,10 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - prometheus-config:/etc/prometheus
       - prometheus:/prometheus
+    configs:
+      prometheus:
+        file: /etc/prometheus/prometheus.yml
     networks:
       - mynet
     deploy:
@@ -71,6 +73,10 @@ volumes:
   prometheus-config:
   prometheus:
   grafana:
+
+configs:
+  prometheus:
+    file: prometheus.yml
 
 networks:
   mynet:
