@@ -153,24 +153,13 @@ docker stack deploy --compose-file=docker-compose.yml monitoring
 
 Note: it will take a minute or so till Swarm downloads the image and deploys the service
 
-### 9. Load prometheus configuration
 
-```
-docker cp prometheus.yml monitoring_prometheus.1.$(docker service ps --no-trunc -f 'desired-state=running' -f 'name=monitoring_prometheus.1' monitoring_prometheus -q):/etc/prometheus/prometheus.yml
-```
-
-Restart prometheus
-```
-docker service scale monitoring_prometheus=0
-docker service scale monitoring_prometheus=1
-```
-
-### 10. Verify that monitoring works
+### 9. Verify that monitoring works
 
 - Prometheus: `http://ip-of-node-01:9090/`
 - Grafana: `http://ip-of-node-01:3000/`
 
-### 11. Import grafana dashboards
+### 10. Import grafana dashboards
 
 - [CockroachDB](https://github.com/cockroachdb/cockroach/tree/master/monitoring/grafana-dashboards)
 - [MySQL and Galera](https://github.com/percona/grafana-dashboards/tree/master/dashboards)
@@ -179,7 +168,7 @@ docker service scale monitoring_prometheus=1
 
 Afterwards, change the timezone of all dashboards to either `Local browser time` or `UTC` to avoid confusion
 
-### 12. Launch cockroachdb-01
+### 11. Launch cockroachdb-01
 
 ```
 cd ../cockroachdb-cluster
@@ -198,14 +187,14 @@ docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:
 
 Web console: `http://ip-of-node-01:8080/`
 
-### 13. Build tester image
+### 12. Build tester image
 
 ```
 cd ../tester
 docker build -t tester .
 ```
 
-### 14. Run single-node cockroachdb tests
+### 13. Run single-node cockroachdb tests
 
 Run
 ```
@@ -225,7 +214,7 @@ docker cp container_id:/scripts/cockroachdb-ycsb.log ./results/cockroachdb-1/
 docker cp container_id:/scripts/oltpbench/results ./results/cockroachdb-1/oltpbench/
 ```
 
-### 15. Launch cockroachdb-02 and 03
+### 14. Launch cockroachdb-02 and 03
 
 ```
 cd ../cockroachdb-cluster
@@ -237,9 +226,9 @@ Verify that cockroachdb cluster has 3 members
 docker run -it --rm --network=mynet cockroachdb/cockroach:${COCKROACHDB_VERSION:-v1.1.3} node status --host=cockroachdb-01 --insecure
 ```
 
-### 16. Run 3-node cockroachdb tests
+### 15. Run 3-node cockroachdb tests
 
-*Repeat Run commands from 14*
+*Repeat Run commands from 13*
 
 Copy results
 ```
@@ -249,13 +238,13 @@ docker cp container_id:/scripts/cockroachdb-ycsb.log ./results/cockroachdb-3/
 docker cp container_id:/scripts/oltpbench/results ./results/cockroachdb-3/oltpbench/
 ```
 
-### 17. Stop cockroachdb
+### 16. Stop cockroachdb
 
 ```
 docker stack rm cockroachdb
 ```
 
-### 18. Launch galera-01
+### 17. Launch galera-01
 
 ```
 cd ../galera-cluster
@@ -269,7 +258,7 @@ docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
 
-### 19. Run single-node galera tests
+### 18. Run single-node galera tests
 
 Run
 ```
@@ -289,7 +278,7 @@ docker cp container_id:/scripts/galera-ycsb.log ./results/galera-1/
 docker cp container_id:/scripts/oltpbench/results ./results/galera-1/oltpbench/
 ```
 
-### 20. Launch galera-02 and 03
+### 19. Launch galera-02 and 03
 
 ```
 cd ../galera-cluster
@@ -303,9 +292,9 @@ docker run -it --rm --network=mynet mariadb:${MARIADB_VERSION:-10.2.11} mysql -h
 SHOW GLOBAL STATUS LIKE 'wsrep_cluster_size';
 ```
 
-### 21. Run 3-node galera tests
+### 20. Run 3-node galera tests
 
-*Repeat Run commands from 19*
+*Repeat Run commands from 18*
 
 Copy results
 ```
@@ -376,7 +365,6 @@ With YCSB we will have an additional arragement:
 
 ### Room for improvement
 
-- simplify galera initialization
 - merge galera and cockroachdb tests to avoid duplication
 - a one-stop script which does all of the above
 - parse results into json or csv
