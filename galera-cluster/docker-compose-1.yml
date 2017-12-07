@@ -17,6 +17,7 @@ services:
       --log-slave-updates=1
       --binlog-format=ROW
       --binlog-cache-size=16M
+      --max-prepared-stmt-count=65528
       --innodb-flush-method=O_DIRECT
       --innodb-buffer-pool-size=4096M
       --innodb-buffer-pool-instances=4
@@ -25,9 +26,9 @@ services:
       --sync-binlog=0
       --innodb-flush-log-at-trx-commit=2
       --innodb-autoinc-lock-mode=2
-      --wsrep_cluster_address=gcomm://
+      --wsrep-cluster-address=gcomm://
       --wsrep-provider=/usr/lib/galera/libgalera_smm.so
-      --wsrep_on=ON
+      --wsrep-on=ON
       --wsrep-sst-method=rsync
       --wsrep-slave-threads=8
       --wsrep-provider-options="gcache.size=512M;gcache.page_size=512M;gcs.fc_limit=512"
