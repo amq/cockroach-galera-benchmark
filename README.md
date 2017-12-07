@@ -334,10 +334,13 @@ docker stack rm galera
 Volumes
 ```
 docker volume rm monitoring_prometheus
-docker volume rm monitoring_prometheus-config
 docker volume rm monitoring_grafana
 docker volume rm cockroachdb_cockroachdb-01
+docker volume rm cockroachdb_cockroachdb-02
+docker volume rm cockroachdb_cockroachdb-03
 docker volume rm galera_galera-01
+docker volume rm galera_galera-02
+docker volume rm galera_galera-03
 ```
 
 Alternatively, remove all volumes and images
@@ -349,7 +352,12 @@ docker prune -af
 
 Sysbench
 ```
-cat sysbench-1.log | egrep "threads:|transactions:|queries:|min:|avg:|max:|percentile:" | tr -d "\n" | sed 's/Number of threads: /\n/g' | sed 's/[A-Za-z\/]\{1,\}://g' | sed -e 's/95th//g' -e 's/per sec.)//g' -e 's/ms//g' -e 's/(//g' | sed 's/ \{1,\}/,/g'
+cat sysbench.log | egrep "threads:|transactions:|queries:|min:|avg:|max:|percentile:" | tr -d "\n" | sed 's/Number of threads: /\n/g' | sed 's/[A-Za-z\/]\{1,\}://g' | sed -e 's/95th//g' -e 's/per sec.)//g' -e 's/ms//g' -e 's/(//g' | sed 's/ \{1,\}/,/g'
+```
+
+YCSB
+```
+cat ycsb.log | egrep "started.*(threads|tps)|Throughput|AverageLatency|95thPercentileLatency|99thPercentileLatency" | sed -e 's/\[CLEANUP\].*//g' -e 's/.*95thPercentileLatency(us),//g' -e 's/.*AverageLatency(us),//g' -e 's/.*99thPercentileLatency(us),//g' -e 's/.*Throughput(ops\/sec), //g' | sed 's/[A-Za-z\/]\{1,\}: //g' | sed 's/).*/\n/g' | tr -d "\n" | sed 's/(/\n/g' | sed 's/started.*//g' | sed 's/s/s,/g' | sed 's/ \{1,\}/,/g'
 ```
 
 ### Tests
